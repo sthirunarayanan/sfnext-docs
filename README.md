@@ -53,3 +53,29 @@ rotate the password periodically.
 pnpm build
 pnpm preview   # sanity-check the production build locally
 ```
+
+## Deployment — GitHub Pages at docs.ashleyfurniture.com
+
+`.github/workflows/deploy.yml` builds and publishes `dist/` to GitHub Pages on
+every push to `main` (or manually via "Run workflow").
+
+**One-time setup (requires repo admin / DNS access — not done by this agent):**
+
+1. **Repository secret**: Settings → Secrets and variables → Actions → add
+   `VITE_DOCS_PASSWORD_HASH` with the hash from
+   `node scripts/hash-password.mjs "<password>"`. The workflow fails the
+   build without it in a production (`PROD`) build — see `PasswordGate.tsx`.
+2. **Pages source**: Settings → Pages → Build and deployment → Source =
+   "GitHub Actions" (not "Deploy from a branch").
+3. **Custom domain**: Settings → Pages → Custom domain = `docs.ashleyfurniture.com`,
+   then check "Enforce HTTPS" once the certificate provisions. `public/CNAME`
+   already contains this domain so it's copied into every build automatically.
+4. **DNS record** (added by whoever manages `ashleyfurniture.com` DNS — not
+   this repo): a `CNAME` record —
+   - Host: `docs`
+   - Target: `<github-org-or-user>.github.io` (the GitHub Pages default
+     domain for this repository's owner)
+   - TTL: provider default
+
+Once DNS propagates and the workflow has run at least once, the site is live
+at `https://docs.ashleyfurniture.com`.
