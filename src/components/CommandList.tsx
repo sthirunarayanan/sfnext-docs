@@ -10,9 +10,14 @@ export function CommandList({ commands }: CommandListProps) {
     return (
         <div className="space-y-5">
             {commands.map((item) => (
-                <div key={item.command} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div
+                    key={item.command}
+                    className="rounded-xl border border-black bg-white p-4 dark:border-white dark:bg-black"
+                >
                     <CodeBlock code={item.command} />
-                    <p className="mt-3 text-sm leading-relaxed text-slate-600">{item.description}</p>
+                    <p className="mt-3 text-sm leading-relaxed text-neutral-700 dark:text-neutral-400">
+                        {item.description}
+                    </p>
                 </div>
             ))}
         </div>

@@ -27,8 +27,8 @@ export function PasswordGate({ children }: PasswordGateProps) {
     if (!configuredHash) {
         if (import.meta.env.PROD) {
             return (
-                <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6 text-center">
-                    <p className="max-w-sm text-sm text-slate-600">
+                <div className="flex min-h-screen items-center justify-center bg-white px-6 text-center dark:bg-black">
+                    <p className="max-w-sm text-sm text-neutral-700 dark:text-neutral-400">
                         This site is misconfigured: VITE_DOCS_PASSWORD_HASH was not set at build time.
                         See README.md "Production access control".
                     </p>
@@ -57,23 +57,30 @@ export function PasswordGate({ children }: PasswordGateProps) {
     }
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6">
-            <form onSubmit={handleSubmit} className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h1 className="text-lg font-bold text-slate-900">Storefront Next Docs</h1>
-                <p className="mt-1 text-sm text-slate-500">Enter the access password to continue.</p>
+        <div className="flex min-h-screen items-center justify-center bg-white px-6 dark:bg-black">
+            <form
+                onSubmit={handleSubmit}
+                className="w-full max-w-sm rounded-xl border-2 border-black bg-white p-6 dark:border-white dark:bg-black"
+            >
+                <h1 className="text-lg font-bold uppercase tracking-wide text-black dark:text-white">
+                    Storefront Next Docs
+                </h1>
+                <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+                    Enter the access password to continue.
+                </p>
                 <input
                     type="password"
                     autoFocus
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Password"
-                    className="mt-4 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className="mt-4 w-full rounded-md border border-black px-3 py-2 text-sm text-black outline-none focus:ring-2 focus:ring-black dark:border-white dark:bg-black dark:text-white dark:focus:ring-white"
                 />
-                {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+                {error && <p className="mt-2 text-sm font-medium text-black dark:text-white">{error}</p>}
                 <button
                     type="submit"
                     disabled={checking || password.length === 0}
-                    className="mt-4 w-full rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                    className="mt-4 w-full rounded-md border border-black bg-black px-3 py-2 text-sm font-semibold text-white hover:bg-white hover:text-black disabled:opacity-50 dark:border-white dark:bg-white dark:text-black dark:hover:bg-black dark:hover:text-white"
                 >
                     {checking ? 'Checking…' : 'Unlock'}
                 </button>

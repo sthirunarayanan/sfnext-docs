@@ -5,6 +5,7 @@ import { CommandList } from './components/CommandList';
 import { EnvVarTable } from './components/EnvVarTable';
 import { StepList } from './components/StepList';
 import { PasswordGate } from './components/PasswordGate';
+import { useTheme } from './lib/use-theme';
 import { prerequisites, envVars, runCommands, qualityCommands, deployCommands, gitSteps } from './data/content';
 
 export default function App() {
@@ -16,9 +17,11 @@ export default function App() {
 }
 
 function AppContent() {
+    const { theme, toggleTheme } = useTheme();
+
     return (
-        <div className="min-h-screen bg-slate-50 text-slate-900">
-            <Header />
+        <div className="min-h-screen bg-white text-black dark:bg-black dark:text-white">
+            <Header theme={theme} onToggleTheme={toggleTheme} />
             <div className="mx-auto flex max-w-6xl">
                 <Sidebar />
                 <main className="min-w-0 flex-1 px-6 py-8">
@@ -60,7 +63,7 @@ function AppContent() {
                     <Section
                         id="deploy"
                         title="5. Local Build & Deploy"
-                        intro="Produce a production build, sanity-check it locally, then ship it to Commerce Cloud Managed Runtime."
+                        intro="Every deployment-related command available in package.json — app bundle deploy to Managed Runtime, environment variable sync, and the full cartridge/metadata sandbox deploy chain."
                     >
                         <CommandList commands={deployCommands} />
                     </Section>

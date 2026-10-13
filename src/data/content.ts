@@ -130,14 +130,64 @@ export const deployCommands: Command[] = [
             'Serves the production build locally (same artifact "pnpm push" would deploy), useful for a final sanity check before pushing to Managed Runtime.',
     },
     {
-        command: 'pnpm cartridge:generate',
-        description:
-            'Extracts Page Designer component metadata into a deployable SFCC cartridge. Needed whenever Page Designer component definitions changed, before a cartridge deploy.',
-    },
-    {
         command: 'pnpm push',
         description:
-            'Syncs environment variables to Managed Runtime (via "pnpm mrt:env:sync") and uploads the built bundle using the storefront-next-dev CLI, targeting the project/target configured by MRT_PROJECT and MRT_TARGET.',
+            'App deploy to Managed Runtime. Syncs environment variables ("pnpm mrt:env:sync") then uploads the built bundle via the storefront-next-dev CLI, targeting the project/target configured by MRT_PROJECT and MRT_TARGET.',
+    },
+    {
+        command: 'pnpm mrt:env:sync',
+        description:
+            'Reads .env and .env.secrets and pushes those values as Managed Runtime environment variables, without doing a full app deploy. Runs automatically as part of "pnpm push".',
+    },
+    {
+        command: 'pnpm mrt:env:diff',
+        description:
+            'Dry-run of mrt:env:sync — shows what would change on Managed Runtime without actually writing anything. Use this to review env drift before syncing for real.',
+    },
+    {
+        command: 'pnpm config:push-env',
+        description:
+            'Pushes local .env overrides to Managed Runtime via the B2C CLI (b2c mrt env var push). Pair with "pnpm config:inspect" to see current effective config first.',
+    },
+    {
+        command: 'pnpm cartridge:generate',
+        description:
+            'Extracts Page Designer component metadata into a deployable SFCC cartridge directory. Required before validating or deploying cartridges, and after any Page Designer component definition change.',
+    },
+    {
+        command: 'pnpm cartridge:validate',
+        description:
+            'Validates the generated cartridge structure (sfnext validate-cartridge) before deploying it to a B2C sandbox — catches malformed cartridge metadata early.',
+    },
+    {
+        command: 'pnpm cartridge:deploy',
+        description:
+            'Deploys the generated, validated cartridge to the configured B2C sandbox (sfnext deploy-cartridge). Cartridge-only deploy — does not touch the Managed Runtime app bundle.',
+    },
+    {
+        command: 'pnpm deploy:cartridges',
+        description:
+            'Deploys every cartridge under cartridges/ (including legacy SG/Ashley cartridges) to the sandbox via the B2C CLI code-deploy command, then reloads them. Broader than cartridge:deploy — covers the whole cartridges/ tree, not just the generated one.',
+    },
+    {
+        command: 'pnpm deploy-dev',
+        description:
+            'Convenience chain for a full cartridge-side sandbox deploy in one step: cartridge:generate → cartridge:validate → cartridge:deploy → deploy:cartridges. Does not deploy the app bundle to Managed Runtime — use "pnpm push" for that.',
+    },
+    {
+        command: 'pnpm deploy:full',
+        description:
+            'Cross-platform (Windows/macOS/Linux) equivalent of the deploy-dev chain, implemented in scripts/deploy-full.js so it works under PowerShell/cmd.exe as well as bash/zsh (avoids Unix-only find/sed/basename/paste pipelines).',
+    },
+    {
+        command: 'pnpm deploy:meta',
+        description:
+            'Imports cartridges/meta_import (custom attribute/object definitions) then cartridges/site_import (site preferences) into a B2C sandbox via "b2c job import". meta_import always runs first since site_import preferences often depend on its definitions.',
+    },
+    {
+        command: 'pnpm deploy-all',
+        description:
+            'The full sandbox provisioning sequence: pnpm deploy:full (cartridges) followed by pnpm deploy:meta (metadata + site import). Use this for a from-scratch sandbox setup or after pulling changes that touch both cartridges and metadata.',
     },
 ];
 

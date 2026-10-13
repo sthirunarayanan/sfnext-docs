@@ -20,13 +20,13 @@ export function CodeBlock({ code }: CodeBlockProps) {
 
     return (
         <div className="group relative">
-            <pre className="overflow-x-auto rounded-lg bg-slate-900 px-4 py-3 text-sm text-slate-100">
+            <pre className="overflow-x-auto rounded-lg border border-black bg-black px-4 py-3 text-sm text-white dark:border-white">
                 <code>{code}</code>
             </pre>
             <button
                 type="button"
                 onClick={handleCopy}
-                className="absolute right-2 top-2 rounded-md bg-slate-700/70 px-2 py-1 text-xs font-medium text-slate-100 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-slate-600"
+                className="absolute right-2 top-2 rounded-md border border-white/40 bg-white/10 px-2 py-1 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white hover:text-black"
             >
                 {copied ? 'Copied!' : 'Copy'}
             </button>
