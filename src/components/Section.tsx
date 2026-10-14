@@ -10,9 +10,9 @@ interface SectionProps {
 /** A top-level page section: anchor id (for nav), heading, intro paragraph, then arbitrary content. */
 export function Section({ id, title, intro, children }: SectionProps) {
     return (
-        <section id={id} className="scroll-mt-20 border-b border-neutral-300 py-10 last:border-b-0 dark:border-neutral-700">
-            <h2 className="text-xl font-bold uppercase tracking-wide text-black dark:text-white">{title}</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-neutral-700 dark:text-neutral-400">{intro}</p>
+        <section id={id} className="scroll-mt-20 border-b border-[#2a211a] bg-[#0b0a08]/45 py-10 backdrop-blur-sm last:border-b-0">
+            <h2 className="text-xl font-bold uppercase tracking-wide text-[#f0802a]">{title}</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#a89f90]">{intro}</p>
             <div className="mt-6">{children}</div>
         </section>
     );

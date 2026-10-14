@@ -12,14 +12,14 @@ export function StepList({ steps }: StepListProps) {
             {steps.map((step, index) => (
                 <li
                     key={step.title}
-                    className="flex gap-4 rounded-xl border border-black bg-white p-4 dark:border-white dark:bg-black"
+                    className="flex gap-4 rounded-xl border border-[#2a211a] bg-[#14110d] p-4"
                 >
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-black bg-black text-sm font-semibold text-white dark:border-white dark:bg-white dark:text-black">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#f0802a] bg-[#f0802a] text-sm font-semibold text-[#0b0a08]">
                         {index + 1}
                     </span>
                     <div className="min-w-0 flex-1">
-                        <h4 className="font-semibold text-black dark:text-white">{step.title}</h4>
-                        <p className="mt-1 text-sm leading-relaxed text-neutral-700 dark:text-neutral-400">
+                        <h4 className="font-semibold text-[#f5f1e8]">{step.title}</h4>
+                        <p className="mt-1 text-sm leading-relaxed text-[#a89f90]">
                             {step.description}
                         </p>
                         {step.command && (

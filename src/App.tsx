@@ -5,8 +5,17 @@ import { CommandList } from './components/CommandList';
 import { EnvVarTable } from './components/EnvVarTable';
 import { StepList } from './components/StepList';
 import { PasswordGate } from './components/PasswordGate';
-import { useTheme } from './lib/use-theme';
-import { prerequisites, envVars, runCommands, qualityCommands, deployCommands, gitSteps } from './data/content';
+import { EnvironmentValueTable } from './components/EnvironmentValueTable';
+import {
+    prerequisites,
+    envVars,
+    runCommands,
+    qualityCommands,
+    deployCommands,
+    gitSteps,
+    featureFlags,
+    customAttributes,
+} from './data/content';
 
 export default function App() {
     return (
@@ -17,14 +26,21 @@ export default function App() {
 }
 
 function AppContent() {
-    const { theme, toggleTheme } = useTheme();
-
     return (
-        <div className="min-h-screen bg-white text-black dark:bg-black dark:text-white">
-            <Header theme={theme} onToggleTheme={toggleTheme} />
-            <div className="mx-auto flex max-w-6xl">
-                <Sidebar />
-                <main className="min-w-0 flex-1 px-6 py-8">
+        <div className="min-h-screen bg-[#0b0a08] text-[#f5f1e8]">
+            <div className="fixed inset-0 z-0 flex justify-center overflow-hidden">
+                <div
+                    aria-hidden="true"
+                    className="h-[95%] w-[80%] max-w-6xl bg-contain bg-center bg-no-repeat"
+                    style={{ backgroundImage: `url('${import.meta.env.BASE_URL}assets/ad-background.png')` }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#0b0a08]/40 via-[#0b0a08]/70 to-[#0b0a08]" />
+            </div>
+            <div className="relative z-10 mx-auto max-w-6xl">
+                <Header />
+                <div className="flex">
+                    <Sidebar />
+                    <main className="min-w-0 flex-1 px-6 py-8">
                     <Section
                         id="prerequisites"
                         title="1. Prerequisites"
@@ -75,7 +91,45 @@ function AppContent() {
                     >
                         <StepList steps={gitSteps} />
                     </Section>
-                </main>
+
+                    <Section
+                        id="flags"
+                        title="7. Feature Flags & Custom Attributes"
+                        intro="Current values across Development, Stage, and Production. Keep this in sync whenever a flag or attribute default changes in any environment."
+                    >
+                        <h3 className="text-sm font-semibold uppercase tracking-wide text-[#f0802a]">
+                            Feature Flags
+                        </h3>
+                        <div className="mt-4">
+                            <EnvironmentValueTable
+                                items={featureFlags}
+                                renderLabel={(item) => item.name}
+                                renderDescription={(item) => item.description}
+                                emptyMessage="No feature flags documented yet."
+                            />
+                        </div>
+
+                        <h3 className="mt-10 text-sm font-semibold uppercase tracking-wide text-[#f0802a]">
+                            Custom Attributes
+                        </h3>
+                        <div className="mt-4">
+                            <EnvironmentValueTable
+                                items={customAttributes}
+                                renderLabel={(item) => (
+                                    <>
+                                        {item.name}
+                                        <span className="ml-2 font-sans text-[10px] font-normal uppercase text-[#a89f90]">
+                                            {item.objectType}
+                                        </span>
+                                    </>
+                                )}
+                                renderDescription={(item) => item.description}
+                                emptyMessage="No custom attributes documented yet."
+                            />
+                        </div>
+                    </Section>
+                    </main>
+                </div>
             </div>
         </div>
     );

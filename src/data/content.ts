@@ -15,6 +15,23 @@ export interface Step {
     command?: string;
 }
 
+export interface EnvironmentValues {
+    development: string;
+    stage: string;
+    production: string;
+}
+
+export interface FeatureFlag extends EnvironmentValues {
+    name: string;
+    description: string;
+}
+
+export interface CustomAttribute extends EnvironmentValues {
+    name: string;
+    objectType: string;
+    description: string;
+}
+
 export const prerequisites: Command[] = [
     {
         command: 'node --version',
@@ -189,6 +206,72 @@ export const deployCommands: Command[] = [
         description:
             'The full sandbox provisioning sequence: pnpm deploy:full (cartridges) followed by pnpm deploy:meta (metadata + site import). Use this for a from-scratch sandbox setup or after pulling changes that touch both cartridges and metadata.',
     },
+];
+
+// Sourced from site_import/preferences.xml in each platform's repo ("all-instances" plus any
+// <development>/<staging>/<production> overrides). Secrets, API keys, and tokens are intentionally
+// excluded. "—" means the preference isn't set for that environment in the repo (Storefront Next has
+// no <production> block — Production is changed by hand in Business Manager only).
+export const featureFlags: FeatureFlag[] = [
+    // Storefront Next (ashley-sfcc-storefront)
+    { name: 'experianAddressEnabled', description: '[Storefront Next] Enables Experian address validation.', development: 'true', stage: 'true', production: 'true' },
+    { name: 'kount_IsEnabled', description: '[Storefront Next] Enables Kount fraud detection.', development: 'true', stage: 'true', production: 'true' },
+    { name: 'ATEnable', description: '[Storefront Next] Enables AfterPay/ATEnable integration.', development: 'true', stage: 'true', production: 'true' },
+    { name: 'extendGlobalSwitch', description: '[Storefront Next] Master switch for the Extend warranty integration.', development: 'true', stage: 'true', production: 'true' },
+    { name: 'extendPDPSwitch', description: '[Storefront Next] Enables Extend warranty offer on PDP.', development: 'true', stage: 'true', production: 'true' },
+    { name: 'RTNFeatureToggle', description: '[Storefront Next] Enables real-time notifications (order.afterPOST → orchestrator dispatch).', development: 'true', stage: 'true', production: 'true' },
+    { name: 'allowMattressFeeForAcima', description: '[Storefront Next] Whether mattress recycling fee applies to Acima lease orders.', development: 'false', stage: 'false', production: 'false' },
+    { name: 'featureTakeBackEnabled', description: '[Storefront Next] Enables the mattress take-back program.', development: 'true', stage: 'true', production: 'true' },
+    { name: 'apgEnablePayPalPostOrderCall', description: '[Storefront Next] Enables APG PayPal post-order call.', development: 'true', stage: 'true', production: 'true' },
+    { name: 'enablePayLater', description: '[Storefront Next] Enables PayPal Pay Later financing option.', development: 'true', stage: 'true', production: 'true' },
+    { name: 'isTriplePlay', description: '[Storefront Next] Enables Triple Play promotion logic.', development: 'true', stage: 'true', production: 'true' },
+    { name: 'asLowAsFinanceEnabled', description: '[Storefront Next] Enables "as low as" financing price messaging.', development: 'true', stage: 'true', production: 'true' },
+    { name: 'featureEnableConcoraAccountLookup', description: '[Storefront Next] Enables Concora account lookup feature.', development: 'false', stage: 'false', production: 'false' },
+    { name: 'featureEnablePayPalPayInFullSDK', description: '[Storefront Next] Enables PayPal REST v2 SDK checkout path (dev only override; INT-24).', development: 'true', stage: '—', production: '—' },
+    { name: 'enableAcimaFinance', description: '[Storefront Next] Master kill-switch for Acima Lease-to-Own (dev/staging only; Production inherits BM).', development: 'true', stage: 'true', production: '— (BM-managed)' },
+    { name: 'featureEnableAcimaWebhook', description: '[Storefront Next] Enables the Acima /contract-status webhook flow (dev only; INT-56).', development: 'true', stage: '—', production: '—' },
+    { name: 'apgEnableSplitPayments', description: '[Storefront Next] Enables APG multi-authorization split per warehouse × delivery method.', development: 'true', stage: 'true', production: '— (BM-managed)' },
+    { name: 'synchrony_v3_Enabled', description: '[Storefront Next] Enables Synchrony v3 financing integration (sandbox creds on dev/staging).', development: 'true', stage: 'true', production: '— (BM-managed)' },
+    { name: 'enableSynchronyCVV', description: '[Storefront Next] Requires CVV for Synchrony card payments.', development: 'true', stage: 'true', production: '— (BM-managed)' },
+    { name: 'eQuickScreenEnabled', description: '[Storefront Next] Enables Synchrony eQuickScreen/DataShare.', development: 'true', stage: 'true', production: '— (BM-managed)' },
+    { name: 'synchronyUnifyEnabled', description: '[Storefront Next] Enables Synchrony Unify (disabled until BM has real sandbox creds; INT-48).', development: 'false', stage: 'false', production: '— (BM-managed)' },
+
+    // Site Genesis (Ashcomm-SFCC-SG-C8)
+    { name: 'StorefrontURLsEnabled', description: '[Site Genesis] Enables SEO storefront URLs.', development: 'true', stage: 'true', production: 'true' },
+    { name: 'isDevelopment', description: '[Site Genesis] Marks the instance as a development instance (affects jsBase resolution).', development: 'false', stage: 'false', production: 'false' },
+    { name: 'PP_AuthorizationInCaseOfOrder', description: '[Site Genesis] PayPal authorization-on-order behavior.', development: 'true', stage: 'true', production: 'true' },
+    { name: 'PixleeEnabled', description: '[Site Genesis] Enables Pixlee user-generated-content widgets.', development: 'true', stage: 'true', production: 'true' },
+    { name: 'poBoxAddrAllowedForBillingAddr', description: '[Site Genesis] Allows PO Box addresses as billing addresses.', development: 'true', stage: 'true', production: 'true' },
+    { name: 'eQuickScreenEnabled', description: '[Site Genesis] Enables Synchrony eQuickScreen/DataShare.', development: 'true', stage: 'true', production: 'true' },
+    { name: 'featureEnableOrderEventAPIStatus', description: '[Site Genesis] Enables the Order Event API status-update integration.', development: 'false', stage: 'false', production: 'false' },
+    { name: 'apgEnablePayPalPostOrderCall', description: '[Site Genesis] Enables APG PayPal post-order call (dev override only observed).', development: 'true', stage: '—', production: '—' },
+    { name: 'ATEnable', description: '[Site Genesis] Enables AfterPay/ATEnable integration (dev override only observed).', development: 'true', stage: '—', production: '—' },
+    { name: 'defaultTaxRateEnabled', description: '[Site Genesis] Uses the default tax rate fallback (dev override only observed).', development: 'true', stage: '—', production: '—' },
+    { name: 'enableStorePickUp', description: '[Site Genesis] Enables in-store pickup option (dev override only observed).', development: 'false', stage: '—', production: '—' },
+    { name: 'ashOHDSEnabled', description: '[Site Genesis] Enables Order Home Delivery Scheduling (dev override only observed).', development: 'true', stage: '—', production: '—' },
+    { name: 'multipleWarehouseSelection', description: '[Site Genesis] Enables multiple-warehouse selection logic (dev override only observed).', development: 'true', stage: '—', production: '—' },
+    { name: 'turntoCssOverwritesV5', description: '[Site Genesis] Enables TurnTo v5 CSS overrides (dev override only observed).', development: 'true', stage: '—', production: '—' },
+    { name: 'turntoUseVariantsV5', description: '[Site Genesis] Enables TurnTo v5 variant support (dev override only observed).', development: 'true', stage: '—', production: '—' },
+    { name: 'turntoJSFeedV5', description: '[Site Genesis] Enables TurnTo v5 JS feed (dev override only observed).', development: 'true', stage: '—', production: '—' },
+    { name: 'turntoShowCount', description: '[Site Genesis] Shows TurnTo review count badge.', development: '—', stage: 'true', production: 'true' },
+    { name: 'kount_IsEnabled', description: '[Site Genesis] Enables Kount fraud detection (dev override only observed).', development: 'true', stage: '—', production: '—' },
+    { name: 'kount_ENS', description: '[Site Genesis] Enables Kount Event Notification Service (dev override only observed).', development: 'true', stage: '—', production: '—' },
+    { name: 'useMinifiedFiles', description: '[Site Genesis] Serves minified JS/CSS bundles (dev override only observed).', development: 'false', stage: '—', production: '—' },
+    { name: 'apgEnableSplitPayments', description: '[Site Genesis] Enables APG multi-authorization split (dev override only observed).', development: 'true', stage: '—', production: '—' },
+];
+
+// Sourced from the same preferences.xml files — non-secret configuration values (numeric thresholds,
+// fee amounts, counts). API keys, tokens, and credentials are intentionally excluded.
+export const customAttributes: CustomAttribute[] = [
+    { name: 'ATPCachingTTL', objectType: 'Site Preference', description: '[Storefront Next] ATP cache TTL in seconds (0 = disabled). Staging/Production preserved in BM, not set here.', development: '3600', stage: '— (BM-managed)', production: '— (BM-managed)' },
+    { name: 'acimaFinanceMinimumPriceThresholdForPDP', objectType: 'Site Preference', description: '[Storefront Next] Minimum cart price ($) to show the Acima PDP "start" gate (dev only).', development: '300', stage: '—', production: '—' },
+    { name: 'curbsideDeliveryFee', objectType: 'Site Preference', description: '[Site Genesis] Curbside delivery fee ($), all-instances.', development: '0', stage: '0', production: '0' },
+    { name: 'whiteGloveServiceFee', objectType: 'Site Preference', description: '[Site Genesis] White Glove delivery service fee ($).', development: '—', stage: '99.99', production: '99.99' },
+    { name: 'payLater_min_price', objectType: 'Site Preference', description: '[Site Genesis] Minimum order price ($) eligible for Pay Later financing.', development: '—', stage: '30.00', production: '30.00' },
+    { name: 'payLater_max_price', objectType: 'Site Preference', description: '[Site Genesis] Maximum order price ($) eligible for Pay Later financing.', development: '—', stage: '1500.00', production: '1500.00' },
+    { name: 'minDiscontinuedAvailability', objectType: 'Site Preference', description: '[Site Genesis] Minimum inventory count to keep a discontinued SKU orderable (dev override only observed).', development: '10', stage: '—', production: '—' },
+    { name: 'ashOHDSMaxDays', objectType: 'Site Preference', description: '[Site Genesis] Max days out for Order Home Delivery Scheduling (dev override only observed).', development: '30', stage: '—', production: '—' },
+    { name: 'ashOHDSMinDays', objectType: 'Site Preference', description: '[Site Genesis] Min days out for Order Home Delivery Scheduling (dev override only observed).', development: '4', stage: '—', production: '—' },
 ];
 
 export const gitSteps: Step[] = [
