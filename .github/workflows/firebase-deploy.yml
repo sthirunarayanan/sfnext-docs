@@ -1,0 +1,45 @@
+name: Deploy to Firebase
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: firebase-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+        env:
+          # Required repository secret — see README.md "Production build".
+          # Vite bakes env vars in at build time, so this must be set here,
+          # not only in a runtime .env file.
+          VITE_DOCS_PASSWORD_HASH: ${{ secrets.VITE_DOCS_PASSWORD_HASH }}
+          VITE_UNIFI_DEMO_PASSWORD_HASH: ${{ secrets.VITE_UNIFI_DEMO_PASSWORD_HASH }}
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SFNEXT_DOCS }}
+
+      - name: Deploy to Firebase (Hosting + Functions)
+        run: pnpm exec firebase deploy --only hosting,functions --project sfnext-docs --non-interactive
+
