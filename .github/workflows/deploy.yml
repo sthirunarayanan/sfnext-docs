@@ -38,6 +38,7 @@ jobs:
           # Vite bakes env vars in at build time, so this must be set here,
           # not only in a runtime .env file.
           VITE_DOCS_PASSWORD_HASH: ${{ secrets.VITE_DOCS_PASSWORD_HASH }}
+          VITE_UNIFI_DEMO_PASSWORD_HASH: ${{ secrets.VITE_UNIFI_DEMO_PASSWORD_HASH }}
 
       - uses: actions/upload-pages-artifact@v3
         with:
