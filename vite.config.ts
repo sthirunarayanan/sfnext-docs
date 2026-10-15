@@ -108,7 +108,7 @@ function unifiProxyPlugin(): Plugin {
 
 /** @see {@link https://vite.dev/config/} */
 export default defineConfig({
-    base: '/sfnext-docs/',
+    base: '/',
     plugins: [react(), tailwindcss(), unifiProxyPlugin()],
     server: {
         port: 5174,

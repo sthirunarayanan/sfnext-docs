@@ -54,28 +54,32 @@ pnpm build
 pnpm preview   # sanity-check the production build locally
 ```
 
-## Deployment — GitHub Pages at docs.ashleyfurniture.com
+## Deployment — Firebase Hosting + Cloud Functions (project `sfnext-docs`)
 
-`.github/workflows/deploy.yml` builds and publishes `dist/` to GitHub Pages on
-every push to `main` (or manually via "Run workflow").
+The static site is served by Firebase Hosting (`dist/`), and the
+`/api/scapi-token`, `/api/unifi-token`, `/api/unifi-dpos-token`,
+`/api/unifi-lookup-transaction`, and `/api/unifi-transact` routes are rewritten
+(see `firebase.json`) to Cloud Functions in `functions/` — these mirror the
+dev-only Vite proxy in `vite.config.ts`, so the "Server-to-Server Token Calls"
+demo in `UnifiDemo.tsx` works the same way on the deployed site as it does
+under `pnpm dev`, with no CORS issues (same-origin) and no secrets shipped to
+the browser.
 
-**One-time setup (requires repo admin / DNS access — not done by this agent):**
+**One-time setup:**
 
-1. **Repository secret**: Settings → Secrets and variables → Actions → add
-   `VITE_DOCS_PASSWORD_HASH` with the hash from
-   `node scripts/hash-password.mjs "<password>"`. The workflow fails the
-   build without it in a production (`PROD`) build — see `PasswordGate.tsx`.
-2. **Pages source**: Settings → Pages → Build and deployment → Source =
-   "GitHub Actions" (not "Deploy from a branch").
-3. **Custom domain**: Settings → Pages → Custom domain = `docs.ashleyfurniture.com`,
-   then check "Enforce HTTPS" once the certificate provisions. `public/CNAME`
-   already contains this domain so it's copied into every build automatically.
-4. **DNS record** (added by whoever manages `ashleyfurniture.com` DNS — not
-   this repo): a `CNAME` record —
-   - Host: `docs`
-   - Target: `<github-org-or-user>.github.io` (the GitHub Pages default
-     domain for this repository's owner)
-   - TTL: provider default
+1. Log in to the Firebase CLI: `pnpm firebase:login` (opens a browser).
+2. Confirm you have access to the `sfnext-docs` Firebase project:
+   `pnpm exec firebase projects:list`.
+3. For a custom domain (e.g. `docs.ashleyfurniture.com`), add it under
+   Firebase Console → Hosting → "Add custom domain", then add the DNS records
+   it gives you (whoever manages `ashleyfurniture.com` DNS — not this repo).
 
-Once DNS propagates and the workflow has run at least once, the site is live
-at `https://docs.ashleyfurniture.com`.
+**Deploying:**
+
+```bash
+# Set VITE_DOCS_PASSWORD_HASH in your shell (Vite bakes env vars in at build
+# time — see "Production build" above) before running:
+pnpm firebase:deploy
+```
+
+This builds the site and deploys both Hosting and Functions in one step.

@@ -1,5 +1,6 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { sha256Hex } from '../lib/sha256';
+import { initAnalytics } from '../firebase';
 
 const SESSION_KEY = 'sfnext-docs-unlocked';
 const configuredHash = import.meta.env.VITE_DOCS_PASSWORD_HASH as string | undefined;
@@ -21,6 +22,12 @@ export function PasswordGate({ children }: PasswordGateProps) {
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [checking, setChecking] = useState(false);
+
+    // Only start Analytics once the shopper has unlocked the site, not on the bare password screen.
+    // Declared before any early return so hook order stays stable across renders.
+    useEffect(() => {
+        if (unlocked) void initAnalytics();
+    }, [unlocked]);
 
     // No password configured — fail open in local dev only (e.g. hash-password.mjs not run yet),
     // but never in a production build.
