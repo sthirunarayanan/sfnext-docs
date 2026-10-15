@@ -1,16 +1,21 @@
-name: Deploy to Firebase
+name: Deploy to GitHub Pages
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 concurrency:
-  group: firebase-deploy
+  group: pages
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -35,11 +40,17 @@ jobs:
           VITE_DOCS_PASSWORD_HASH: ${{ secrets.VITE_DOCS_PASSWORD_HASH }}
           VITE_UNIFI_DEMO_PASSWORD_HASH: ${{ secrets.VITE_UNIFI_DEMO_PASSWORD_HASH }}
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+      - uses: actions/upload-pages-artifact@v3
         with:
-          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SFNEXT_DOCS }}
+          path: dist
 
-      - name: Deploy to Firebase (Hosting + Functions)
-        run: pnpm exec firebase deploy --only hosting,functions --project sfnext-docs --non-interactive
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
 
