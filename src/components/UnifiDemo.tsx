@@ -309,6 +309,8 @@ export function UnifiDemo() {
 
     return (
         <div>
+            {!import.meta.env.PROD && (
+                <>
             <h3 className="text-sm font-semibold uppercase tracking-wide text-[#f0802a]">
                 Server-to-Server Token Calls
             </h3>
@@ -434,6 +436,8 @@ export function UnifiDemo() {
                 POST /unifi-transact
             </button>
             <LogBlock title="Transact Log" lines={transactLog} />
+                </>
+            )}
 
             <h3 className="mt-10 text-sm font-semibold uppercase tracking-wide text-[#f0802a]">Combined Modal</h3>
             <p className="mb-4 mt-2 text-xs font-semibold uppercase tracking-wide text-[#a89f90]">
