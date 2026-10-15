@@ -49,6 +49,23 @@ const SAMPLE_LOOKUP_TRANSACTION_REQUEST_BODY = {
     transactionToken: 'PI20001210568391a1406389fe',
 };
 
+const SAMPLE_TRANSACT_REQUEST_BODY = {
+    orderNo: 'd6b4851400a9ca64bb6fbe2b8a',
+    accessToken: 'nsJHiDFg05FdUathzC48SCpufVFp',
+    transactionToken: '1a1406f3627PI2000121071567',
+    amount: '643.90',
+    addressInfo: {
+        addressLine1: '950 Forrer Blvd',
+        addressLine2: '',
+        city: 'Dayton',
+        state: 'OH',
+        zipCode: '45420',
+        phone: '466-456-4645',
+        email: 'SThirunarayanan@Ashleyfurniture.com',
+    },
+    testRequest: true,
+};
+
 /**
  * Loads the real Synchrony UniFi.js SDK (non-prod/UAT) and opens the Combined Modal via
  * calldBuyProcess with an editable request JSON payload. postMessage events from the modal
@@ -68,11 +85,15 @@ export function UnifiDemo() {
     const [lookupTransactionRequestBodyText, setLookupTransactionRequestBodyText] = useState(() =>
         JSON.stringify(SAMPLE_LOOKUP_TRANSACTION_REQUEST_BODY, null, 2)
     );
+    const [transactRequestBodyText, setTransactRequestBodyText] = useState(() =>
+        JSON.stringify(SAMPLE_TRANSACT_REQUEST_BODY, null, 2)
+    );
 
     const [combinedModalLog, setCombinedModalLog] = useState<string[]>([]);
     const [unifiTokenLog, setUnifiTokenLog] = useState<string[]>([]);
     const [dposTokenLog, setDposTokenLog] = useState<string[]>([]);
     const [lookupTransactionLog, setLookupTransactionLog] = useState<string[]>([]);
+    const [transactLog, setTransactLog] = useState<string[]>([]);
 
     function appendTo(setter: Dispatch<SetStateAction<string[]>>, line: string) {
         setter((prev) => [...prev, `${new Date().toLocaleTimeString()} — ${line}`]);
@@ -191,6 +212,35 @@ export function UnifiDemo() {
                 setLookupTransactionLog,
                 `Request failed: ${err instanceof Error ? err.message : String(err)}`
             );
+        }
+    }
+
+    async function fetchTransact() {
+        if (!accessToken.trim()) {
+            appendTo(setTransactLog, 'Enter an access token first.');
+            return;
+        }
+        let body: unknown;
+        try {
+            body = JSON.parse(transactRequestBodyText);
+        } catch (err) {
+            appendTo(setTransactLog, `Invalid request body JSON: ${err instanceof Error ? err.message : String(err)}`);
+            return;
+        }
+        appendTo(setTransactLog, `POST /api/unifi-transact (proxied to Commerce Cloud) with body: ${JSON.stringify(body)}`);
+        try {
+            const res = await fetch('/api/unifi-transact', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${accessToken.trim()}`,
+                },
+                body: JSON.stringify(body),
+            });
+            const text = await res.text();
+            appendTo(setTransactLog, `Response ${res.status}: ${text}`);
+        } catch (err) {
+            appendTo(setTransactLog, `Request failed: ${err instanceof Error ? err.message : String(err)}`);
         }
     }
 
@@ -343,6 +393,30 @@ export function UnifiDemo() {
                 POST /unifi-lookup-transaction
             </button>
             <LogBlock title="Lookup Transaction Log" lines={lookupTransactionLog} />
+
+            <label
+                className="mb-2 mt-6 block text-sm font-semibold text-[#f5f1e8]"
+                htmlFor="unifi-transact-request-body"
+            >
+                /unifi-transact request body
+            </label>
+            <textarea
+                id="unifi-transact-request-body"
+                value={transactRequestBodyText}
+                onChange={(e) => setTransactRequestBodyText(e.target.value)}
+                rows={14}
+                spellCheck={false}
+                className="w-full rounded-lg border border-[#2a211a] bg-[#14110d] p-4 font-mono text-xs text-[#f5f1e8] focus:border-[#f0802a] focus:outline-none"
+            />
+
+            <button
+                type="button"
+                onClick={fetchTransact}
+                className="mt-4 rounded-md border border-[#f0802a] bg-[#f0802a] px-4 py-2 text-sm font-semibold text-[#0b0a08] hover:bg-[#f0802a]/90"
+            >
+                POST /unifi-transact
+            </button>
+            <LogBlock title="Transact Log" lines={transactLog} />
 
             <h3 className="mt-10 text-sm font-semibold uppercase tracking-wide text-[#f0802a]">Combined Modal</h3>
             <p className="mb-4 mt-2 text-xs font-semibold uppercase tracking-wide text-[#a89f90]">

@@ -63,7 +63,7 @@ function unifiProxyPlugin(): Plugin {
 
         try {
             const basicAuth = Buffer.from(`${SCAPI_CLIENT_ID}:${SCAPI_CLIENT_SECRET}`).toString('base64');
-            const form = new URLSearchParams({ grant_type: 'client_credentials' });
+            const form = new URLSearchParams({ grant_type: 'client_credentials', channel_id: 'Ashley-US' });
 
             const upstream = await fetch(SCAPI_TOKEN_URL, {
                 method: 'POST',
@@ -95,6 +95,9 @@ function unifiProxyPlugin(): Plugin {
             });
             server.middlewares.use('/api/unifi-lookup-transaction', (req, res) => {
                 void proxy(req, res, `${UNIFI_API_BASE}/unifi-lookup-transaction?siteId=Ashley-US`);
+            });
+            server.middlewares.use('/api/unifi-transact', (req, res) => {
+                void proxy(req, res, `${UNIFI_API_BASE}/unifi-transact?siteId=Ashley-US`);
             });
             server.middlewares.use('/api/scapi-token', (req, res) => {
                 void proxyScapiToken(req, res);
