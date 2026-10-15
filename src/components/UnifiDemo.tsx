@@ -29,80 +29,6 @@ const SAMPLE_PAYLOAD = {
 
 type ScriptState = 'loading' | 'ready' | 'error';
 
-// Live-site-only test: direct-from-browser SLAS public-client guest login (Authorization Code +
-// PKCE), with no secret and no backend proxy. SCAPI is documented as not supporting CORS for
-// direct client-side calls, so this is expected to potentially fail in production — it exists to
-// empirically test whether it works for this specific public client/org. Dev (`pnpm dev`) keeps
-// using the existing /api/scapi-token private-client proxy in vite.config.ts.
-const SCAPI_AUTH_BASE =
-    'https://6u3h1blt.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/f_ecom_bbvd_030';
-const SCAPI_PUBLIC_CLIENT_ID = 'b6d972c0-5a91-4f3b-a709-75d329c6b61f';
-
-function base64UrlEncode(bytes: Uint8Array): string {
-    let binary = '';
-    bytes.forEach((b) => {
-        binary += String.fromCharCode(b);
-    });
-    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-function generatePkceCodeVerifier(): string {
-    const array = new Uint8Array(32);
-    crypto.getRandomValues(array);
-    return base64UrlEncode(array);
-}
-
-async function generatePkceCodeChallenge(verifier: string): Promise<string> {
-    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
-    return base64UrlEncode(new Uint8Array(digest));
-}
-
-/**
- * Loads the SLAS /oauth2/authorize URL in a hidden iframe and waits for it to redirect back to
- * our own origin (redirectUri), at which point the iframe's location becomes readable (same
- * origin) so we can pull the "code" and "usid" query params off it without a backend.
- */
-function authorizeViaHiddenIframe(
-    authorizeUrl: string,
-    redirectUri: string
-): Promise<{ code: string; usid: string } | null> {
-    return new Promise((resolve) => {
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        let settled = false;
-
-        const timeoutId = setTimeout(() => {
-            if (!settled) {
-                settled = true;
-                iframe.remove();
-                resolve(null);
-            }
-        }, 10000);
-
-        iframe.onload = () => {
-            try {
-                const href = iframe.contentWindow?.location.href;
-                if (href && href.startsWith(redirectUri) && !settled) {
-                    const url = new URL(href);
-                    const code = url.searchParams.get('code');
-                    const usid = url.searchParams.get('usid');
-                    if (code && usid) {
-                        settled = true;
-                        clearTimeout(timeoutId);
-                        iframe.remove();
-                        resolve({ code, usid });
-                    }
-                }
-            } catch {
-                // Still cross-origin (on SLAS's domain) — ignore and wait for the redirect back.
-            }
-        };
-
-        iframe.src = authorizeUrl;
-        document.body.appendChild(iframe);
-    });
-}
-
 function LogBlock({ title, lines }: { title: string; lines: string[] }) {
     return (
         <>
@@ -197,67 +123,17 @@ export function UnifiDemo() {
         }
     }
 
-    /**
-     * Live-site-only test (see constants above): direct browser-to-SCAPI guest login using the
-     * public client with PKCE — no proxy, no secret. SCAPI is documented as not supporting CORS
-     * for direct client-side calls, so this may fail with a CORS/network error; that failure mode
-     * is itself the answer to the empirical question being tested.
-     */
-    async function fetchScapiAccessTokenPublicClient() {
-        appendTo(setScapiTokenLog, 'Public-client PKCE guest login (direct browser call, no backend)');
-        try {
-            const codeVerifier = generatePkceCodeVerifier();
-            const codeChallenge = await generatePkceCodeChallenge(codeVerifier);
-            const redirectUri = `${window.location.origin}${window.location.pathname}`;
-
-            const authorizeUrl =
-                `${SCAPI_AUTH_BASE}/oauth2/authorize?client_id=${SCAPI_PUBLIC_CLIENT_ID}` +
-                `&response_type=code&hint=guest&channel_id=Ashley-US` +
-                `&code_challenge=${encodeURIComponent(codeChallenge)}` +
-                `&redirect_uri=${encodeURIComponent(redirectUri)}`;
-
-            appendTo(setScapiTokenLog, `GET /oauth2/authorize via hidden iframe (redirect_uri=${redirectUri})`);
-            const authResult = await authorizeViaHiddenIframe(authorizeUrl, redirectUri);
-            if (!authResult) {
-                appendTo(
-                    setScapiTokenLog,
-                    'No authorization code received back — iframe redirect was not captured ' +
-                        '(likely blocked by CORS/X-Frame-Options, origin not whitelisted, or timed out).'
-                );
-                return;
-            }
-            appendTo(setScapiTokenLog, `Got authorization code (usid=${authResult.usid}). POST /oauth2/token directly…`);
-
-            const form = new URLSearchParams({
-                grant_type: 'authorization_code_pkce',
-                client_id: SCAPI_PUBLIC_CLIENT_ID,
-                channel_id: 'Ashley-US',
-                code: authResult.code,
-                code_verifier: codeVerifier,
-                usid: authResult.usid,
-                redirect_uri: redirectUri,
-            });
-            const res = await fetch(`${SCAPI_AUTH_BASE}/oauth2/token`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: form.toString(),
-            });
-            const text = await res.text();
-            appendTo(setScapiTokenLog, `Response ${res.status}: ${text}`);
-            if (res.ok) applyScapiTokenResponseText(text);
-        } catch (err) {
-            appendTo(setScapiTokenLog, `Request failed: ${err instanceof Error ? err.message : String(err)}`);
-        }
-    }
-
     async function fetchScapiAccessToken() {
+        if (import.meta.env.PROD) {
+            appendTo(
+                setScapiTokenLog,
+                'SCAPI calls are disabled on the live site (no backend proxy available). Run `pnpm dev` locally to use this.'
+            );
+            return;
+        }
         setFetchingScapiToken(true);
         try {
-            if (import.meta.env.PROD) {
-                await fetchScapiAccessTokenPublicClient();
-            } else {
-                await fetchScapiAccessTokenDevProxy();
-            }
+            await fetchScapiAccessTokenDevProxy();
         } finally {
             setFetchingScapiToken(false);
         }
@@ -450,13 +326,10 @@ export function UnifiDemo() {
                 Under <code>pnpm dev</code>, calls the SLAS <code>shopper/auth</code>{' '}
                 client_credentials grant via a local proxy (<code>/api/scapi-token</code>) using a
                 private client whose secret is fixed server-side in <code>vite.config.ts</code> (never
-                sent to the browser). On the deployed (production) build, there is no backend, so this
-                instead runs a direct-from-browser SLAS public-client guest login with PKCE — an
-                experimental test, since SCAPI is documented as not supporting CORS for direct
-                client-side calls. Either way, against{' '}
+                sent to the browser), against{' '}
                 <code>6u3h1blt.api.commercecloud.salesforce.com</code>, org{' '}
-                <code>f_ecom_bbvd_030</code>, and the Access Token field below is filled in
-                automatically on success.
+                <code>f_ecom_bbvd_030</code>. The Access Token field below is filled in automatically
+                on success. Disabled on the live site — there is no backend in the static build.
             </p>
             <button
                 type="button"
