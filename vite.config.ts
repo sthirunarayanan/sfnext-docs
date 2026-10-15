@@ -9,6 +9,12 @@ const UNIFI_API_BASE =
 const SCAPI_TOKEN_URL =
     'https://6u3h1blt.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/f_ecom_bbvd_030/oauth2/token';
 
+// Fixed SLAS private-client credentials for the SCAPI token demo. Deliberately kept only in this
+// Node-only Vite config (never bundled into client JS, unlike anything in src/) so the secret is
+// never shipped to the browser — see proxyScapiToken below.
+const SCAPI_CLIENT_ID = 'a967db67-2c26-41b3-bdd9-04e0368ec08c';
+const SCAPI_CLIENT_SECRET = 'we9nK10zyCP7fWDleUlVivlRsV3z2WJrCZYWupBQF9I';
+
 /**
  * Dev-only server-to-server proxy for the Ashley Synchrony Unifi custom SCAPI endpoints.
  * The browser can't call these directly (CORS + we don't want to assume any particular
@@ -45,26 +51,18 @@ function unifiProxyPlugin(): Plugin {
 
     /**
      * Dev-only proxy for the SCAPI SLAS private-client token endpoint (shopper/auth), used to
-     * obtain the Bearer access token the other Unifi proxy routes require. Forwards the
-     * client_id/client_secret the demo UI posts as JSON and converts it into the client_credentials
-     * grant SLAS expects, authenticated with HTTP Basic (client_id:client_secret) as required for
-     * private (confidential) SLAS clients.
+     * obtain the Bearer access token the other Unifi proxy routes require. Always authenticates
+     * with the fixed SCAPI_CLIENT_ID/SCAPI_CLIENT_SECRET above via HTTP Basic, as required for
+     * private (confidential) SLAS clients — the demo UI does not (and cannot) supply these.
      */
     async function proxyScapiToken(req: IncomingMessage, res: ServerResponse) {
-        const chunks: Buffer[] = [];
-        for await (const chunk of req) chunks.push(chunk as Buffer);
-        const body = Buffer.concat(chunks);
+        // Drain any request body (none expected) so the connection doesn't hang.
+        for await (const _chunk of req) {
+            // no-op
+        }
 
         try {
-            const { clientId, clientSecret } = JSON.parse(body.toString('utf8') || '{}');
-            if (!clientId || !clientSecret) {
-                res.statusCode = 400;
-                res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify({ error: 'clientId and clientSecret are required.' }));
-                return;
-            }
-
-            const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+            const basicAuth = Buffer.from(`${SCAPI_CLIENT_ID}:${SCAPI_CLIENT_SECRET}`).toString('base64');
             const form = new URLSearchParams({ grant_type: 'client_credentials' });
 
             const upstream = await fetch(SCAPI_TOKEN_URL, {

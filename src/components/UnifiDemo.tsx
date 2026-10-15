@@ -60,8 +60,6 @@ export function UnifiDemo() {
     const loggedRef = useRef(false);
 
     const [accessToken, setAccessToken] = useState('');
-    const [clientId, setClientId] = useState('');
-    const [clientSecret, setClientSecret] = useState('');
     const [scapiTokenLog, setScapiTokenLog] = useState<string[]>([]);
     const [fetchingScapiToken, setFetchingScapiToken] = useState(false);
     const [dposRequestBodyText, setDposRequestBodyText] = useState(() =>
@@ -81,21 +79,10 @@ export function UnifiDemo() {
     }
 
     async function fetchScapiAccessToken() {
-        if (!clientId.trim() || !clientSecret.trim()) {
-            appendTo(setScapiTokenLog, 'Client ID and Client Secret are both required.');
-            return;
-        }
         setFetchingScapiToken(true);
         appendTo(setScapiTokenLog, 'POST /api/scapi-token (proxied to SCAPI SLAS oauth2/token)');
         try {
-            const res = await fetch('/api/scapi-token', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    clientId: clientId.trim(),
-                    clientSecret: clientSecret.trim(),
-                }),
-            });
+            const res = await fetch('/api/scapi-token', { method: 'POST' });
             const text = await res.text();
             appendTo(setScapiTokenLog, `Response ${res.status}: ${text}`);
             if (res.ok) {
@@ -271,41 +258,12 @@ export function UnifiDemo() {
                 Get a SCAPI Access Token
             </h4>
             <p className="mb-2 mt-1 text-xs text-[#a89f90]">
-                Calls the SLAS <code>shopper/auth</code> client_credentials grant (Basic auth with
-                Client ID/Secret) via a local proxy (<code>/api/scapi-token</code>) against{' '}
-                <code>6u3h1blt.api.commercecloud.salesforce.com</code>, org <code>f_ecom_bbvd_030</code>,
-                and fills in the Access Token field below on success.
+                Calls the SLAS <code>shopper/auth</code> client_credentials grant via a local proxy
+                (<code>/api/scapi-token</code>) against{' '}
+                <code>6u3h1blt.api.commercecloud.salesforce.com</code>, org <code>f_ecom_bbvd_030</code>.
+                Client ID/Secret are fixed server-side in <code>vite.config.ts</code> (never sent from
+                the browser) and the Access Token field below is filled in automatically on success.
             </p>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                    <label className="mb-1 block text-xs font-semibold text-[#f5f1e8]" htmlFor="scapi-client-id">
-                        Client ID
-                    </label>
-                    <input
-                        id="scapi-client-id"
-                        type="text"
-                        value={clientId}
-                        onChange={(e) => setClientId(e.target.value)}
-                        placeholder="PUBLIC__app__commerce__api__clientId"
-                        spellCheck={false}
-                        className="w-full rounded-lg border border-[#2a211a] bg-[#14110d] p-2 font-mono text-xs text-[#f5f1e8] focus:border-[#f0802a] focus:outline-none"
-                    />
-                </div>
-                <div>
-                    <label className="mb-1 block text-xs font-semibold text-[#f5f1e8]" htmlFor="scapi-client-secret">
-                        Client Secret
-                    </label>
-                    <input
-                        id="scapi-client-secret"
-                        type="password"
-                        value={clientSecret}
-                        onChange={(e) => setClientSecret(e.target.value)}
-                        placeholder="Client Secret"
-                        spellCheck={false}
-                        className="w-full rounded-lg border border-[#2a211a] bg-[#14110d] p-2 font-mono text-xs text-[#f5f1e8] focus:border-[#f0802a] focus:outline-none"
-                    />
-                </div>
-            </div>
             <button
                 type="button"
                 onClick={fetchScapiAccessToken}
