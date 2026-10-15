@@ -133,6 +133,16 @@ export const qualityCommands: Command[] = [
         description:
             'Builds the app with bundle-size tracking enabled and verifies every chunk stays under its configured size limit. CI enforces these limits on every PR.',
     },
+    {
+        command: 'pnpm exec eslint <file relative path>',
+        description: 
+            'Run the lint command for specific file.'
+    },
+    {
+        command: 'pnpm exec eslint <file relative path> --fix',
+        description: 
+            'Fix the lint error for specific file.'
+    }
 ];
 
 export const deployCommands: Command[] = [
