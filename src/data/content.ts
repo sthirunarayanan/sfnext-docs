@@ -32,6 +32,12 @@ export interface CustomAttribute extends EnvironmentValues {
     description: string;
 }
 
+export interface UnifiCredential {
+    name: string;
+    value: string;
+    description: string;
+}
+
 export const prerequisites: Command[] = [
     {
         command: 'node --version',
@@ -282,6 +288,22 @@ export const customAttributes: CustomAttribute[] = [
     { name: 'minDiscontinuedAvailability', objectType: 'Site Preference', description: '[Site Genesis] Minimum inventory count to keep a discontinued SKU orderable (dev override only observed).', development: '10', stage: '—', production: '—' },
     { name: 'ashOHDSMaxDays', objectType: 'Site Preference', description: '[Site Genesis] Max days out for Order Home Delivery Scheduling (dev override only observed).', development: '30', stage: '—', production: '—' },
     { name: 'ashOHDSMinDays', objectType: 'Site Preference', description: '[Site Genesis] Min days out for Order Home Delivery Scheduling (dev override only observed).', development: '4', stage: '—', production: '—' },
+];
+
+// Non-secret Synchrony UniFi config from ashley-sfcc-storefront/.env (dev/UAT values). The real
+// OAuth client_id/client_secret live only in Business Manager site preferences
+// (synchronyUnifyClientId / synchronyUnifyClientSecret) and are never present in .env or shipped
+// to the browser — there is nothing secret to redact here. Safe to show plainly since this whole
+// site sits behind PasswordGate.
+export const unifiCredentials: UnifiCredential[] = [
+    { name: 'SYNCHRONY_UNIFI_ENABLED', value: 'true', description: 'Master toggle for the Synchrony Unify/UniFi integration.' },
+    { name: 'SYNCHRONY_UNIFI_MERCHANT_ID', value: '5348121090000702', description: 'SYF merchant ID the Combined Modal transacts against.' },
+    { name: 'SYNCHRONY_UNIFI_API_BASE_URL', value: 'https://api-stg.syf.com', description: 'Base URL for server-to-server Synchrony UniFi API calls (OAuth, DPOS token, transact).' },
+    { name: 'SYNCHRONY_UNIFI_SDK_NON_PROD_URL', value: 'https://spdpone.syfpos.com/mpp/UniFi.js', description: 'UniFi.js SDK source for non-production (UAT) — used by this demo.' },
+    { name: 'SYNCHRONY_UNIFI_SDK_PROD_URL', value: 'https://pdpone.syfpayments.com/mpp/UniFi.js', description: 'UniFi.js SDK source for production.' },
+    { name: 'SYNCHRONY_UNIFI_TIMEOUT_SECONDS', value: '30', description: 'Timeout for Synchrony UniFi service calls.' },
+    { name: 'SYNCHRONY_UNIFI_PARTNER_ID', value: 'PI20001210', description: 'syfPartnerId sent on the calldBuyProcess payload.' },
+    { name: 'SYNCHRONY_UNIFI_MOCK_PROMOTION_ID', value: '0112', description: 'Non-production promo code override for offerNumber1, used when no real promo is configured.' },
 ];
 
 export const gitSteps: Step[] = [

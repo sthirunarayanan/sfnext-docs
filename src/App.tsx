@@ -6,6 +6,8 @@ import { EnvVarTable } from './components/EnvVarTable';
 import { StepList } from './components/StepList';
 import { PasswordGate } from './components/PasswordGate';
 import { EnvironmentValueTable } from './components/EnvironmentValueTable';
+import { UnifiCredentialTable } from './components/UnifiCredentialTable';
+import { UnifiDemo } from './components/UnifiDemo';
 import {
     prerequisites,
     envVars,
@@ -15,6 +17,7 @@ import {
     gitSteps,
     featureFlags,
     customAttributes,
+    unifiCredentials,
 } from './data/content';
 
 export default function App() {
@@ -126,6 +129,26 @@ function AppContent() {
                                 renderDescription={(item) => item.description}
                                 emptyMessage="No custom attributes documented yet."
                             />
+                        </div>
+                    </Section>
+
+                    <Section
+                        id="unifi-demo"
+                        title="8. Unifi Demo"
+                        intro="Loads the real Synchrony UniFi Combined Modal SDK and opens it with a shopper-supplied calldBuyProcess request. Credentials below are the non-secret values from ashley-sfcc-storefront/.env — the OAuth client secret is Business Manager-only and never appears here."
+                    >
+                        <h3 className="text-sm font-semibold uppercase tracking-wide text-[#f0802a]">
+                            Synchrony Unifi Config
+                        </h3>
+                        <div className="mt-4">
+                            <UnifiCredentialTable items={unifiCredentials} />
+                        </div>
+
+                        <h3 className="mt-10 text-sm font-semibold uppercase tracking-wide text-[#f0802a]">
+                            Run Demo
+                        </h3>
+                        <div className="mt-4">
+                            <UnifiDemo />
                         </div>
                     </Section>
                     </main>

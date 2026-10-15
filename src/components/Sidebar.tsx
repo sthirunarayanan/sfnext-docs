@@ -11,6 +11,7 @@ const NAV_ITEMS: NavItem[] = [
     { id: 'deploy', label: 'Local Build & Deploy' },
     { id: 'git', label: 'Git Workflow' },
     { id: 'flags', label: 'Feature Flags & Attributes' },
+    { id: 'unifi-demo', label: 'Unifi Demo' },
 ];
 
 /** Sticky left sidebar navigation, scrolling the page to each section's anchor id. */
