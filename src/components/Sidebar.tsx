@@ -11,6 +11,7 @@ const NAV_ITEMS: NavItem[] = [
     { id: 'deploy', label: 'Local Build & Deploy' },
     { id: 'git', label: 'Git Workflow' },
     { id: 'flags', label: 'Feature Flags & Attributes' },
+    { id: 'checkout-flow', label: 'Checkout: Kount, Payment, RTN' },
 ];
 
 interface SidebarProps {

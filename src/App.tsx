@@ -9,6 +9,7 @@ import { PasswordGate } from './components/PasswordGate';
 import { UnifiDemoPage } from './components/UnifiDemoPage';
 import { UnifiPasswordModal } from './components/UnifiPasswordModal';
 import { EnvironmentValueTable } from './components/EnvironmentValueTable';
+import { Mermaid } from './components/Mermaid';
 import {
     prerequisites,
     envVars,
@@ -19,6 +20,14 @@ import {
     featureFlags,
     customAttributes,
 } from './data/content';
+import { checkoutFlowIntro, checkoutFlowKey, checkoutFlowRule, checkoutFlowChart } from './data/checkoutFlow';
+import {
+    rootCauseSummary,
+    rootCauseExplanation,
+    rootCauseParity,
+    rootCauseFixOptions,
+    rootCauseChart,
+} from './data/checkoutFlowRootCause';
 
 type Route = 'docs' | 'unifi-demo';
 
@@ -149,6 +158,46 @@ function AppContent() {
                                 emptyMessage="No custom attributes documented yet."
                             />
                         </div>
+                    </Section>
+
+                    <Section
+                        id="checkout-flow"
+                        title="8. Checkout Flow: Kount, Payment Gateway & RTN"
+                        intro={checkoutFlowIntro}
+                    >
+                        <ul className="mb-4 flex flex-wrap gap-4 text-sm text-[#d6cfc3]">
+                            {checkoutFlowKey.map((item) => (
+                                <li key={item.label}>
+                                    <span className="font-semibold">{item.label}</span> — {item.description}
+                                </li>
+                            ))}
+                        </ul>
+                        <p className="mb-4 rounded-lg border border-[#f0802a]/30 bg-[#14110d] p-4 text-sm leading-relaxed text-[#a89f90]">
+                            {checkoutFlowRule}
+                        </p>
+                        <Mermaid chart={checkoutFlowChart} />
+
+                        <h3 className="mt-10 text-sm font-semibold uppercase tracking-wide text-[#f0802a]">
+                            Root Cause: Orders Recorded in Kount but Missing from SFCC Business Manager
+                        </h3>
+                        <p className="mt-3 text-sm leading-relaxed text-[#a89f90]">{rootCauseSummary}</p>
+                        <div className="mt-6">
+                            <Mermaid chart={rootCauseChart} />
+                        </div>
+                        <p className="mt-6 whitespace-pre-line text-sm leading-relaxed text-[#a89f90]">
+                            {rootCauseExplanation}
+                        </p>
+                        <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-[#a89f90]">
+                            {rootCauseParity}
+                        </p>
+                        <h4 className="mt-6 text-sm font-semibold uppercase tracking-wide text-[#f0802a]">
+                            Fix Options
+                        </h4>
+                        <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-relaxed text-[#a89f90]">
+                            {rootCauseFixOptions.map((option) => (
+                                <li key={option}>{option}</li>
+                            ))}
+                        </ol>
                     </Section>
                     </main>
                 </div>
