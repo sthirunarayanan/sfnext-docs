@@ -71,9 +71,18 @@ const SAMPLE_TRANSACT_REQUEST_BODY = {
  * calldBuyProcess with an editable request JSON payload. postMessage events from the modal
  * (e.g. "Unifi Modal Close") are logged to the shared log below as-is.
  */
-export function UnifiDemo() {
+interface UnifiDemoProps {
+    /** Overrides SAMPLE_PAYLOAD.storeMid — e.g. driven by the editable Synchrony Unifi Config table above. */
+    storeMid?: string;
+    /** Overrides SAMPLE_PAYLOAD.syfPartnerId — e.g. driven by the editable Synchrony Unifi Config table above. */
+    syfPartnerId?: string;
+}
+
+export function UnifiDemo({ storeMid, syfPartnerId }: UnifiDemoProps = {}) {
     const [scriptState, setScriptState] = useState<ScriptState>('loading');
-    const [payloadText, setPayloadText] = useState(() => JSON.stringify(SAMPLE_PAYLOAD, null, 2));
+    const [payloadText, setPayloadText] = useState(() =>
+        JSON.stringify({ ...SAMPLE_PAYLOAD, ...(storeMid && { storeMid }), ...(syfPartnerId && { syfPartnerId }) }, null, 2)
+    );
     const loggedRef = useRef(false);
 
     const [accessToken, setAccessToken] = useState('');
@@ -291,6 +300,25 @@ export function UnifiDemo() {
         return () => window.removeEventListener('message', listener);
     }, []);
 
+    function updatePayloadField(field: keyof typeof SAMPLE_PAYLOAD, value: string) {
+        try {
+            const json = JSON.parse(payloadText) as Record<string, unknown>;
+            json[field] = value;
+            setPayloadText(JSON.stringify(json, null, 2));
+        } catch {
+            // Payload JSON is currently invalid — ignore the quick-edit until it's fixed in the textarea.
+        }
+    }
+
+    function readPayloadField(field: keyof typeof SAMPLE_PAYLOAD): string {
+        try {
+            const json = JSON.parse(payloadText) as Record<string, unknown>;
+            return typeof json[field] === 'string' ? (json[field] as string) : '';
+        } catch {
+            return '';
+        }
+    }
+
     function openCombinedModal() {
         if (!window.syfMPP) {
             appendTo(setCombinedModalLog, 'UniFi SDK is not ready yet.');
@@ -443,6 +471,66 @@ export function UnifiDemo() {
             <p className="mb-4 mt-2 text-xs font-semibold uppercase tracking-wide text-[#a89f90]">
                 SDK status: <span className="text-[#f0802a]">{scriptState}</span>
             </p>
+
+            <p className="mb-2 mt-1 text-xs text-[#a89f90]">
+                Quick-edit the fields below to swap in a different merchant/partner before opening the
+                modal — they read from and write to the JSON textarea underneath, so you can also edit
+                the JSON directly.
+            </p>
+            <div className="mb-4 grid gap-3 sm:grid-cols-2">
+                <div>
+                    <label className="mb-1 block text-xs font-semibold text-[#f5f1e8]" htmlFor="unifi-store-mid">
+                        Merchant ID (storeMid)
+                    </label>
+                    <input
+                        id="unifi-store-mid"
+                        type="text"
+                        value={readPayloadField('storeMid')}
+                        onChange={(e) => updatePayloadField('storeMid', e.target.value)}
+                        spellCheck={false}
+                        className="w-full rounded-lg border border-[#2a211a] bg-[#14110d] p-2 font-mono text-xs text-[#f5f1e8] focus:border-[#f0802a] focus:outline-none"
+                    />
+                </div>
+                <div>
+                    <label className="mb-1 block text-xs font-semibold text-[#f5f1e8]" htmlFor="unifi-partner-id">
+                        Partner ID (syfPartnerId)
+                    </label>
+                    <input
+                        id="unifi-partner-id"
+                        type="text"
+                        value={readPayloadField('syfPartnerId')}
+                        onChange={(e) => updatePayloadField('syfPartnerId', e.target.value)}
+                        spellCheck={false}
+                        className="w-full rounded-lg border border-[#2a211a] bg-[#14110d] p-2 font-mono text-xs text-[#f5f1e8] focus:border-[#f0802a] focus:outline-none"
+                    />
+                </div>
+                <div>
+                    <label className="mb-1 block text-xs font-semibold text-[#f5f1e8]" htmlFor="unifi-offer-number">
+                        Offer Number (offerNumber1)
+                    </label>
+                    <input
+                        id="unifi-offer-number"
+                        type="text"
+                        value={readPayloadField('offerNumber1')}
+                        onChange={(e) => updatePayloadField('offerNumber1', e.target.value)}
+                        spellCheck={false}
+                        className="w-full rounded-lg border border-[#2a211a] bg-[#14110d] p-2 font-mono text-xs text-[#f5f1e8] focus:border-[#f0802a] focus:outline-none"
+                    />
+                </div>
+                <div>
+                    <label className="mb-1 block text-xs font-semibold text-[#f5f1e8]" htmlFor="unifi-trans-amount">
+                        Transaction Amount (transAmount1)
+                    </label>
+                    <input
+                        id="unifi-trans-amount"
+                        type="text"
+                        value={readPayloadField('transAmount1')}
+                        onChange={(e) => updatePayloadField('transAmount1', e.target.value)}
+                        spellCheck={false}
+                        className="w-full rounded-lg border border-[#2a211a] bg-[#14110d] p-2 font-mono text-xs text-[#f5f1e8] focus:border-[#f0802a] focus:outline-none"
+                    />
+                </div>
+            </div>
 
             <label className="mb-2 block text-sm font-semibold text-[#f5f1e8]" htmlFor="unifi-payload">
                 calldBuyProcess request JSON

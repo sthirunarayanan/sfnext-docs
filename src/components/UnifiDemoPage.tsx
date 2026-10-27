@@ -1,7 +1,8 @@
+import { useState } from 'react';
 import { UnifiPasswordGate } from './UnifiPasswordGate';
 import { UnifiCredentialTable } from './UnifiCredentialTable';
 import { UnifiDemo } from './UnifiDemo';
-import { unifiCredentials } from '../data/content';
+import { unifiCredentials, type UnifiCredential } from '../data/content';
 
 interface UnifiDemoPageProps {
     onBack: () => void;
@@ -13,6 +14,15 @@ interface UnifiDemoPageProps {
  * UnifiPasswordGate — independent of the site-wide PasswordGate that already wraps the whole app.
  */
 export function UnifiDemoPage({ onBack }: UnifiDemoPageProps) {
+    const [credentials, setCredentials] = useState<UnifiCredential[]>(unifiCredentials);
+
+    function updateCredential(name: string, value: string) {
+        setCredentials((prev) => prev.map((item) => (item.name === name ? { ...item, value } : item)));
+    }
+
+    const merchantId = credentials.find((item) => item.name === 'SYNCHRONY_UNIFI_MERCHANT_ID')?.value;
+    const partnerId = credentials.find((item) => item.name === 'SYNCHRONY_UNIFI_PARTNER_ID')?.value;
+
     return (
         <div className="min-h-screen bg-[#0b0a08] text-[#f5f1e8]">
             <div className="mx-auto max-w-6xl px-6 py-8">
@@ -52,15 +62,20 @@ export function UnifiDemoPage({ onBack }: UnifiDemoPageProps) {
                         <h3 className="text-sm font-semibold uppercase tracking-wide text-[#f0802a]">
                             Synchrony Unifi Config
                         </h3>
+                        <p className="mt-2 text-xs text-[#a89f90]">
+                            Values are editable — change the Merchant ID or Partner ID here and the Run
+                            Demo payload below will default to the updated values (edits live only in
+                            this browser session, they never touch ashley-sfcc-storefront/.env).
+                        </p>
                         <div className="mt-4">
-                            <UnifiCredentialTable items={unifiCredentials} />
+                            <UnifiCredentialTable items={credentials} onChange={updateCredential} />
                         </div>
 
                         <h3 className="mt-10 text-sm font-semibold uppercase tracking-wide text-[#f0802a]">
                             Run Demo
                         </h3>
                         <div className="mt-4">
-                            <UnifiDemo />
+                            <UnifiDemo storeMid={merchantId} syfPartnerId={partnerId} />
                         </div>
                     </UnifiPasswordGate>
                 </div>

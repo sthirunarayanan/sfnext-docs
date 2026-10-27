@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { Section } from './components/Section';
@@ -7,7 +7,9 @@ import { EnvVarTable } from './components/EnvVarTable';
 import { StepList } from './components/StepList';
 import { PasswordGate } from './components/PasswordGate';
 import { UnifiDemoPage } from './components/UnifiDemoPage';
+import { UnifiCombinedModalPage } from './components/UnifiCombinedModalPage';
 import { UnifiPasswordModal } from './components/UnifiPasswordModal';
+import { UnifiDocsPasswordModal } from './components/UnifiDocsPasswordModal';
 import { EnvironmentValueTable } from './components/EnvironmentValueTable';
 import { Mermaid } from './components/Mermaid';
 import {
@@ -29,7 +31,20 @@ import {
     rootCauseChart,
 } from './data/checkoutFlowRootCause';
 
-type Route = 'docs' | 'unifi-demo';
+type Route = 'docs' | 'unifi-demo' | 'unifi-combined-modal';
+
+// Browser URL suffix appended/removed when navigating into/out of the Unifi Documentation page.
+const UNIFI_DOCS_PATH = '/unifi-docs';
+
+function withUnifiDocsPath(): string {
+    const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+    return `${base}${UNIFI_DOCS_PATH}${window.location.search}${window.location.hash}`;
+}
+
+function withoutUnifiDocsPath(): string {
+    const base = import.meta.env.BASE_URL || '/';
+    return `${base}${window.location.search}${window.location.hash}`;
+}
 
 export default function App() {
     return (
@@ -40,21 +55,57 @@ export default function App() {
 }
 
 function AppContent() {
-    const [route, setRoute] = useState<Route>('docs');
-    const [unifiModalOpen, setUnifiModalOpen] = useState(false);
+    const [route, setRoute] = useState<Route>(() =>
+        window.location.pathname.endsWith(UNIFI_DOCS_PATH) ? 'unifi-combined-modal' : 'docs'
+    );
+    // Which gated route the open password modal should unlock into, if any.
+    const [pendingUnifiRoute, setPendingUnifiRoute] = useState<Extract<Route, 'unifi-demo' | 'unifi-combined-modal'> | null>(null);
+
+    // Keep the browser URL in sync with the Unifi Documentation route, and support
+    // back/forward navigation (e.g. browser Back button) between it and the docs page.
+    useEffect(() => {
+        if (route === 'unifi-combined-modal') {
+            if (!window.location.pathname.endsWith(UNIFI_DOCS_PATH)) {
+                window.history.pushState({ route }, '', withUnifiDocsPath());
+            }
+        } else if (window.location.pathname.endsWith(UNIFI_DOCS_PATH)) {
+            window.history.pushState({ route }, '', withoutUnifiDocsPath());
+        }
+    }, [route]);
+
+    useEffect(() => {
+        function handlePopState() {
+            setRoute(window.location.pathname.endsWith(UNIFI_DOCS_PATH) ? 'unifi-combined-modal' : 'docs');
+        }
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, []);
 
     if (route === 'unifi-demo') {
         return <UnifiDemoPage onBack={() => setRoute('docs')} />;
     }
 
+    if (route === 'unifi-combined-modal') {
+        return <UnifiCombinedModalPage onBack={() => setRoute('docs')} />;
+    }
+
     return (
         <>
-        {unifiModalOpen && (
+        {pendingUnifiRoute === 'unifi-demo' && (
             <UnifiPasswordModal
-                onClose={() => setUnifiModalOpen(false)}
+                onClose={() => setPendingUnifiRoute(null)}
                 onSuccess={() => {
-                    setUnifiModalOpen(false);
                     setRoute('unifi-demo');
+                    setPendingUnifiRoute(null);
+                }}
+            />
+        )}
+        {pendingUnifiRoute === 'unifi-combined-modal' && (
+            <UnifiDocsPasswordModal
+                onClose={() => setPendingUnifiRoute(null)}
+                onSuccess={() => {
+                    setRoute('unifi-combined-modal');
+                    setPendingUnifiRoute(null);
                 }}
             />
         )}
@@ -70,7 +121,10 @@ function AppContent() {
             <div className="relative z-10 mx-auto max-w-6xl">
                 <Header />
                 <div className="flex">
-                    <Sidebar onOpenUnifiDemo={() => setUnifiModalOpen(true)} />
+                    <Sidebar
+                        onOpenUnifiDemo={() => setPendingUnifiRoute('unifi-demo')}
+                        onOpenUnifiCombinedModal={() => setPendingUnifiRoute('unifi-combined-modal')}
+                    />
                     <main className="min-w-0 flex-1 px-6 py-8">
                     <Section
                         id="prerequisites"
