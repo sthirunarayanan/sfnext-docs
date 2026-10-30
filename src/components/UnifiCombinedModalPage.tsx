@@ -1,4 +1,3 @@
-import { UnifiDocsPasswordGate } from './UnifiDocsPasswordGate';
 import { Mermaid } from './Mermaid';
 import {
     unifiCombinedModalIntro,
@@ -32,9 +31,7 @@ function FieldTable({ items }: { items: UnifiTestField[] }) {
 
 /**
  * Standalone page (not part of the main docs scroll) reached only via the sidebar
- * "Unifi Documentation" button, at URL path /unifi-docs. Gated behind its own separate
- * password — see UnifiDocsPasswordGate — independent of both the Unifi Demo page's
- * password and the site-wide PasswordGate.
+ * "Unifi Documentation" button, at URL path /unifi-docs.
  */
 export function UnifiCombinedModalPage({ onBack }: UnifiCombinedModalPageProps) {
     return (
@@ -69,7 +66,6 @@ export function UnifiCombinedModalPage({ onBack }: UnifiCombinedModalPageProps) 
                 </p>
 
                 <div className="mt-6">
-                    <UnifiDocsPasswordGate>
                         <h3 className="text-sm font-semibold uppercase tracking-wide text-[#f0802a]">
                             Implementation Flow
                         </h3>
@@ -113,7 +109,6 @@ export function UnifiCombinedModalPage({ onBack }: UnifiCombinedModalPageProps) 
                         <div className="mt-4">
                             <Mermaid chart={unifiWertChart} />
                         </div>
-                    </UnifiDocsPasswordGate>
                 </div>
             </div>
         </div>

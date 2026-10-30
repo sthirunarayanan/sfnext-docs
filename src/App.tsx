@@ -9,7 +9,6 @@ import { PasswordGate } from './components/PasswordGate';
 import { UnifiDemoPage } from './components/UnifiDemoPage';
 import { UnifiCombinedModalPage } from './components/UnifiCombinedModalPage';
 import { UnifiPasswordModal } from './components/UnifiPasswordModal';
-import { UnifiDocsPasswordModal } from './components/UnifiDocsPasswordModal';
 import { EnvironmentValueTable } from './components/EnvironmentValueTable';
 import { Mermaid } from './components/Mermaid';
 import {
@@ -59,7 +58,7 @@ function AppContent() {
         window.location.pathname.endsWith(UNIFI_DOCS_PATH) ? 'unifi-combined-modal' : 'docs'
     );
     // Which gated route the open password modal should unlock into, if any.
-    const [pendingUnifiRoute, setPendingUnifiRoute] = useState<Extract<Route, 'unifi-demo' | 'unifi-combined-modal'> | null>(null);
+    const [pendingUnifiRoute, setPendingUnifiRoute] = useState<Extract<Route, 'unifi-demo'> | null>(null);
 
     // Keep the browser URL in sync with the Unifi Documentation route, and support
     // back/forward navigation (e.g. browser Back button) between it and the docs page.
@@ -100,15 +99,6 @@ function AppContent() {
                 }}
             />
         )}
-        {pendingUnifiRoute === 'unifi-combined-modal' && (
-            <UnifiDocsPasswordModal
-                onClose={() => setPendingUnifiRoute(null)}
-                onSuccess={() => {
-                    setRoute('unifi-combined-modal');
-                    setPendingUnifiRoute(null);
-                }}
-            />
-        )}
         <div className="min-h-screen bg-[#0b0a08] text-[#f5f1e8]">
             <div className="fixed inset-0 z-0 flex justify-center overflow-hidden">
                 <div
@@ -123,7 +113,7 @@ function AppContent() {
                 <div className="flex">
                     <Sidebar
                         onOpenUnifiDemo={() => setPendingUnifiRoute('unifi-demo')}
-                        onOpenUnifiCombinedModal={() => setPendingUnifiRoute('unifi-combined-modal')}
+                        onOpenUnifiCombinedModal={() => setRoute('unifi-combined-modal')}
                     />
                     <main className="min-w-0 flex-1 px-6 py-8">
                     <Section
