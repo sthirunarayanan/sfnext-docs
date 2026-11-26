@@ -44,6 +44,32 @@ the hosting layer, e.g.:
 If neither is available, treat `VITE_DOCS_PASSWORD_HASH` as the only gate and
 rotate the password periodically.
 
+## Daily Report tab (agent briefing feed)
+
+The "Daily Report" sidebar entry (`/daily-report`) lists the consolidated
+daily briefings from the Chief agent behind its **own** password
+(`VITE_REPORT_PASSWORD_HASH`, independent of the site-wide gate above).
+
+- **Content**: one markdown file per day at
+  `src/data/daily-reports/<YYYY-MM-DD>.md`, picked up at build time with
+  `import.meta.glob` — adding a file is the whole publish step; there is no
+  index or codegen to maintain.
+- **Feeding a report**:
+  - *Automatic (headless)*: `.github/workflows/daily-report.yml` accepts a
+    `repository_dispatch` of type `daily-report` with
+    `client_payload: { date: "YYYY-MM-DD", markdown: "..." }` — it writes the
+    file, commits it, and deploys to Pages in the same run. Requires a GitHub
+    token with repo scope on the caller's side.
+  - *Manual*: commit the file and push to `main` — `deploy.yml` deploys it
+    like any other change.
+- **Repository secret**: add `VITE_REPORT_PASSWORD_HASH` (Settings → Secrets
+  and variables → Actions) with the hash from
+  `node scripts/hash-password.mjs "<daily-report-password>"`. Without it the
+  production build shows a misconfiguration notice instead of the tab's
+  content.
+- The Chief agent publishes each morning's briefing automatically after its
+  consolidation pass (see its Phase 3 publish step).
+
 ## Production build
 
 ```bash
@@ -65,12 +91,16 @@ every push to `main` (or manually via "Run workflow").
    `VITE_DOCS_PASSWORD_HASH` with the hash from
    `node scripts/hash-password.mjs "<password>"`. The workflow fails the
    build without it in a production (`PROD`) build — see `PasswordGate.tsx`.
-2. **Pages source**: Settings → Pages → Build and deployment → Source =
+2. **Repository secret (Daily Report tab)**: add `VITE_REPORT_PASSWORD_HASH`
+   the same way — the separate password gating the "Daily Report" tab (see
+   "Daily Report tab" below). Both `deploy.yml` and `daily-report.yml` pass it
+   into the build.
+3. **Pages source**: Settings → Pages → Build and deployment → Source =
    "GitHub Actions" (not "Deploy from a branch").
-3. **Custom domain**: Settings → Pages → Custom domain = `docs.ashleyfurniture.com`,
+4. **Custom domain**: Settings → Pages → Custom domain = `docs.ashleyfurniture.com`,
    then check "Enforce HTTPS" once the certificate provisions. `public/CNAME`
    already contains this domain so it's copied into every build automatically.
-4. **DNS record** (added by whoever manages `ashleyfurniture.com` DNS — not
+5. **DNS record** (added by whoever manages `ashleyfurniture.com` DNS — not
    this repo): a `CNAME` record —
    - Host: `docs`
    - Target: `<github-org-or-user>.github.io` (the GitHub Pages default

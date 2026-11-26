@@ -19,6 +19,8 @@ interface SidebarProps {
     onOpenUnifiDemo: () => void;
     /** Opens the password modal gating the separate Unifi Combined Modal implementation page. */
     onOpenUnifiCombinedModal: () => void;
+    /** Navigates to the password-gated Daily Report page. */
+    onOpenDailyReport: () => void;
 }
 
 /** Small padlock glyph indicating the Unifi Demo nav item is password-protected. */
@@ -41,7 +43,7 @@ function LockIcon() {
 }
 
 /** Sticky left sidebar navigation, scrolling the page to each section's anchor id. */
-export function Sidebar({ onOpenUnifiDemo, onOpenUnifiCombinedModal }: SidebarProps) {
+export function Sidebar({ onOpenUnifiDemo, onOpenUnifiCombinedModal, onOpenDailyReport }: SidebarProps) {
     return (
         <nav className="sticky top-16 hidden h-[calc(100vh-4rem)] w-56 shrink-0 overflow-y-auto border-r border-[#2a211a] bg-[#0b0a08]/50 px-4 py-8 backdrop-blur-sm lg:block">
             <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#a89f90]">
@@ -58,6 +60,16 @@ export function Sidebar({ onOpenUnifiDemo, onOpenUnifiCombinedModal }: SidebarPr
                         </a>
                     </li>
                 ))}
+                <li>
+                    <button
+                        type="button"
+                        onClick={onOpenDailyReport}
+                        className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm text-[#d6cfc3] hover:bg-[#f0802a] hover:text-[#0b0a08]"
+                    >
+                        <LockIcon />
+                        Daily Report
+                    </button>
+                </li>
                 <li>
                     <button
                         type="button"

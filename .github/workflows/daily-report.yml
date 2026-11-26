@@ -1,0 +1,99 @@
+name: Daily Report
+
+# Feeds agent daily briefings into the site as the password-gated "Daily Report" tab.
+#
+# Content reaches src/data/daily-reports/ two ways:
+#   1. repository_dispatch (type: daily-report) with client_payload {date, markdown} —
+#      the headless path; this workflow writes the file, commits it, and deploys.
+#   2. A plain git push of src/data/daily-reports/<YYYY-MM-DD>.md to main — deploy.yml
+#      already builds and deploys on every push to main, so nothing extra is needed here.
+# workflow_dispatch without a payload is a plain rebuild-and-redeploy button.
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [daily-report]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  feed-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Write report from repository_dispatch payload
+        if: github.event_name == 'repository_dispatch'
+        env:
+          REPORT_DATE: ${{ github.event.client_payload.date }}
+          REPORT_MARKDOWN: ${{ github.event.client_payload.markdown }}
+        run: |
+          if [ -z "$REPORT_DATE" ] || [ -z "$REPORT_MARKDOWN" ]; then
+            echo "::error::repository_dispatch requires client_payload.date (YYYY-MM-DD) and client_payload.markdown"
+            exit 1
+          fi
+          if ! printf '%s' "$REPORT_DATE" | grep -Eq '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'; then
+            echo "::error::client_payload.date must be YYYY-MM-DD, got: $REPORT_DATE"
+            exit 1
+          fi
+          mkdir -p src/data/daily-reports
+          printf '%s' "$REPORT_MARKDOWN" > "src/data/daily-reports/$REPORT_DATE.md"
+          echo "Wrote src/data/daily-reports/$REPORT_DATE.md"
+          echo "VALIDATED_DATE=$REPORT_DATE" >> "$GITHUB_ENV"
+
+      - name: Commit report
+        if: github.event_name == 'repository_dispatch'
+        env:
+          VALIDATED_DATE: ${{ env.VALIDATED_DATE }}
+        run: |
+          git config user.name "sfnext-docs bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ -n "$(git status --porcelain src/data/daily-reports)" ]; then
+            git add src/data/daily-reports
+            git commit -m "chore(daily-report): publish report ($VALIDATED_DATE)"
+            git push
+          else
+            echo "No changes to commit - report already published."
+          fi
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+        env:
+          # Required repository secrets - see README.md "Production build".
+          # Vite bakes env vars in at build time, so these must be set here,
+          # not only in a runtime .env file.
+          VITE_DOCS_PASSWORD_HASH: ${{ secrets.VITE_DOCS_PASSWORD_HASH }}
+          VITE_UNIFI_DEMO_PASSWORD_HASH: ${{ secrets.VITE_UNIFI_DEMO_PASSWORD_HASH }}
+          VITE_REPORT_PASSWORD_HASH: ${{ secrets.VITE_REPORT_PASSWORD_HASH }}
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: feed-and-deploy
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

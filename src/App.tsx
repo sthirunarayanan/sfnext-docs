@@ -8,6 +8,7 @@ import { StepList } from './components/StepList';
 import { PasswordGate } from './components/PasswordGate';
 import { UnifiDemoPage } from './components/UnifiDemoPage';
 import { UnifiCombinedModalPage } from './components/UnifiCombinedModalPage';
+import { DailyReportPage } from './components/DailyReportPage';
 import { UnifiPasswordModal } from './components/UnifiPasswordModal';
 import { EnvironmentValueTable } from './components/EnvironmentValueTable';
 import { Mermaid } from './components/Mermaid';
@@ -30,17 +31,27 @@ import {
     rootCauseChart,
 } from './data/checkoutFlowRootCause';
 
-type Route = 'docs' | 'unifi-demo' | 'unifi-combined-modal';
+type Route = 'docs' | 'unifi-demo' | 'unifi-combined-modal' | 'daily-report';
 
-// Browser URL suffix appended/removed when navigating into/out of the Unifi Documentation page.
-const UNIFI_DOCS_PATH = '/unifi-docs';
+// Browser URL suffixes for routes that live on their own path (not part of the main docs scroll).
+const SECTION_PATHS: Partial<Record<Route, string>> = {
+    'unifi-combined-modal': '/unifi-docs',
+    'daily-report': '/daily-report',
+};
 
-function withUnifiDocsPath(): string {
-    const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-    return `${base}${UNIFI_DOCS_PATH}${window.location.search}${window.location.hash}`;
+function routeFromPathname(pathname: string): Route {
+    for (const [route, segment] of Object.entries(SECTION_PATHS)) {
+        if (segment && pathname.endsWith(segment)) return route as Route;
+    }
+    return 'docs';
 }
 
-function withoutUnifiDocsPath(): string {
+function withSectionPath(route: Route): string {
+    const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+    return `${base}${SECTION_PATHS[route]}${window.location.search}${window.location.hash}`;
+}
+
+function withoutSectionPath(): string {
     const base = import.meta.env.BASE_URL || '/';
     return `${base}${window.location.search}${window.location.hash}`;
 }
@@ -54,27 +65,26 @@ export default function App() {
 }
 
 function AppContent() {
-    const [route, setRoute] = useState<Route>(() =>
-        window.location.pathname.endsWith(UNIFI_DOCS_PATH) ? 'unifi-combined-modal' : 'docs'
-    );
+    const [route, setRoute] = useState<Route>(() => routeFromPathname(window.location.pathname));
     // Which gated route the open password modal should unlock into, if any.
     const [pendingUnifiRoute, setPendingUnifiRoute] = useState<Extract<Route, 'unifi-demo'> | null>(null);
 
     // Keep the browser URL in sync with the Unifi Documentation route, and support
     // back/forward navigation (e.g. browser Back button) between it and the docs page.
     useEffect(() => {
-        if (route === 'unifi-combined-modal') {
-            if (!window.location.pathname.endsWith(UNIFI_DOCS_PATH)) {
-                window.history.pushState({ route }, '', withUnifiDocsPath());
+        const segment = SECTION_PATHS[route];
+        if (segment) {
+            if (!window.location.pathname.endsWith(segment)) {
+                window.history.pushState({ route }, '', withSectionPath(route));
             }
-        } else if (window.location.pathname.endsWith(UNIFI_DOCS_PATH)) {
-            window.history.pushState({ route }, '', withoutUnifiDocsPath());
+        } else if (Object.values(SECTION_PATHS).some((p) => p && window.location.pathname.endsWith(p))) {
+            window.history.pushState({ route }, '', withoutSectionPath());
         }
     }, [route]);
 
     useEffect(() => {
         function handlePopState() {
-            setRoute(window.location.pathname.endsWith(UNIFI_DOCS_PATH) ? 'unifi-combined-modal' : 'docs');
+            setRoute(routeFromPathname(window.location.pathname));
         }
         window.addEventListener('popstate', handlePopState);
         return () => window.removeEventListener('popstate', handlePopState);
@@ -86,6 +96,10 @@ function AppContent() {
 
     if (route === 'unifi-combined-modal') {
         return <UnifiCombinedModalPage onBack={() => setRoute('docs')} />;
+    }
+
+    if (route === 'daily-report') {
+        return <DailyReportPage onBack={() => setRoute('docs')} />;
     }
 
     return (
@@ -114,6 +128,7 @@ function AppContent() {
                     <Sidebar
                         onOpenUnifiDemo={() => setPendingUnifiRoute('unifi-demo')}
                         onOpenUnifiCombinedModal={() => setRoute('unifi-combined-modal')}
+                        onOpenDailyReport={() => setRoute('daily-report')}
                     />
                     <main className="min-w-0 flex-1 px-6 py-8">
                     <Section
