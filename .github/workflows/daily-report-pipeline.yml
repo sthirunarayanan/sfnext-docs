@@ -1,0 +1,79 @@
+name: Daily Report Pipeline
+
+# Weekday pipeline for the password-gated "Daily Report" tab:
+#   1. verifies that the day's briefing actually made it into the repo
+#      (src/data/daily-reports/<YYYY-MM-DD>.md, published by the local Chief
+#      agent or a repository_dispatch) - a missing report fails the run with a
+#      red X, which is the signal that the morning feed chain broke;
+#   2. rebuilds and redeploys the site so the day's report is guaranteed to be
+#      live even if the ordinary push-triggered deploy had slipped.
+#
+# Runs every working day (Mon-Fri). The cron is UTC; 07:15 UTC is early
+# afternoon in India and comfortably after the local Chief agent publishes
+# (~07:00 local). Note GitHub can start scheduled runs a few minutes late.
+
+on:
+  schedule:
+    - cron: '15 7 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      report_date:
+        description: 'Report date to verify (YYYY-MM-DD). Empty = today (UTC).'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  verify-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify the day's report landed
+        shell: pwsh
+        env:
+          PIPELINE_DATE: ${{ github.event.inputs.report_date }}
+        run: ./scripts/feed-daily-report.ps1 -Verify -Date $env:PIPELINE_DATE
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+        env:
+          # Required repository secrets - see README.md "Production build".
+          # Vite bakes env vars in at build time, so these must be set here,
+          # not only in a runtime .env file.
+          VITE_DOCS_PASSWORD_HASH: ${{ secrets.VITE_DOCS_PASSWORD_HASH }}
+          VITE_UNIFI_DEMO_PASSWORD_HASH: ${{ secrets.VITE_UNIFI_DEMO_PASSWORD_HASH }}
+          VITE_REPORT_PASSWORD_HASH: ${{ secrets.VITE_REPORT_PASSWORD_HASH }}
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: verify-and-publish
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

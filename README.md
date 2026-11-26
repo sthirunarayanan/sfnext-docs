@@ -69,6 +69,12 @@ daily briefings from the Chief agent behind its **own** password
   content.
 - The Chief agent publishes each morning's briefing automatically after its
   consolidation pass (see its Phase 3 publish step).
+- **Pipeline**: `.github/workflows/daily-report-pipeline.yml` runs every
+  working day (cron `15 7 * * 1-5` UTC — Mon–Fri only). It runs
+  `scripts/feed-daily-report.ps1 -Verify` to confirm the day's report actually
+  landed (a red X = the feed chain broke that morning), then rebuilds and
+  redeploys the site. The same script's `-Publish` mode is what Chief runs
+  locally; `-FromDispatch` powers the `repository_dispatch` path above.
 
 ## Production build
 
