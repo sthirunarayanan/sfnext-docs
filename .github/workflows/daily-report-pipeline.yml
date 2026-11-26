@@ -8,13 +8,15 @@ name: Daily Report Pipeline
 #   2. rebuilds and redeploys the site so the day's report is guaranteed to be
 #      live even if the ordinary push-triggered deploy had slipped.
 #
-# Runs every working day (Mon-Fri). The cron is UTC; 07:15 UTC is early
-# afternoon in India and comfortably after the local Chief agent publishes
-# (~07:00 local). Note GitHub can start scheduled runs a few minutes late.
+# Runs every working day (Mon-Fri) at 08:00 IST sharp: cron is UTC and IST is UTC+5:30
+# with no DST, so '30 2 * * 1-5' is exactly 08:00 IST all year round. The local Chief
+# agent runs earlier (scheduled task at 02:15 machine time / 06:45 IST) so the day's
+# report is already published when this pipeline verifies it. Note GitHub can start
+# scheduled runs a few minutes late.
 
 on:
   schedule:
-    - cron: '15 7 * * 1-5'
+    - cron: '30 2 * * 1-5'
   workflow_dispatch:
     inputs:
       report_date:
