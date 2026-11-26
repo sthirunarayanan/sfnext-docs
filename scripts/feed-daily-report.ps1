@@ -33,8 +33,11 @@ param(
     [string]$Date,
     # Repo root defaults to the parent of this script's scripts/ directory.
     [string]$RepoRoot = (Split-Path -Parent $PSScriptRoot),
-    # Where the Chief agent saves its consolidated briefings (local machine only).
-    [string]$ReportsDir = (Join-Path $env:USERPROFILE '.config\opencode\reports\chief')
+    # Where the Chief agent saves its consolidated briefings. Only -Publish uses this, and only
+    # on the local Windows machine. Resolved lazily in the -Publish branch because default
+    # parameter values are evaluated eagerly on every invocation - and $env:USERPROFILE does
+    # not exist on Linux runners, which would crash even -Verify runs before any logic ran.
+    [string]$ReportsDir = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -91,6 +94,14 @@ function Publish-Report {
 }
 
 if ($Publish) {
+    if (-not $ReportsDir) {
+        $homeDir = if ($env:USERPROFILE) { $env:USERPROFILE } elseif ($env:HOME) { $env:HOME } else { '' }
+        if (-not $homeDir) {
+            Write-Error 'PUBLISH-FAILED: cannot locate the Chief reports directory (USERPROFILE/HOME both unset).'
+            exit 1
+        }
+        $ReportsDir = Join-Path $homeDir '.config/opencode/reports/chief'
+    }
     $sourceFile = Join-Path $ReportsDir "$Date.md"
     if (-not (Test-Path $sourceFile)) {
         Write-Error "PUBLISH-FAILED: no Chief report for $Date at $sourceFile. Run the Chief daily briefing first."
