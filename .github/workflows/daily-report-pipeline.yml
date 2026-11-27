@@ -1,12 +1,14 @@
 name: Daily Report Pipeline
 
 # Weekday pipeline for the password-gated "Daily Report" tab:
-#   1. verifies that the day's briefing actually made it into the repo
-#      (src/data/daily-reports/<YYYY-MM-DD>.md, published by the local Chief
-#      agent or a repository_dispatch) - a missing report fails the run with a
-#      red X, which is the signal that the morning feed chain broke;
-#   2. rebuilds and redeploys the site so the day's report is guaranteed to be
-#      live even if the ordinary push-triggered deploy had slipped.
+#   1. GENERATE (self-hosted runner on the principal's machine): calls the Chief agent
+#      directly - agents, consolidation, save, and publish to the repo - so the day's
+#      briefing exists even when the machine slept through the 06:45 IST local task.
+#      Jobs for an offline self-hosted runner queue and run at next wake: no more
+#      skipped mornings.
+#   2. VERIFY (cloud): checks the day's report landed in the repo
+#      (src/data/daily-reports/<YYYY-MM-DD>.md) - a missing report fails with a red X.
+#   3. PUBLISH (cloud): rebuilds and redeploys the site so the report is guaranteed live.
 #
 # Runs every working day (Mon-Fri) at 08:00 IST sharp: cron is UTC and IST is UTC+5:30
 # with no DST, so '30 2 * * 1-5' is exactly 08:00 IST all year round. The local Chief
@@ -34,7 +36,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  generate-briefing:
+    # Runs on the principal's machine (self-hosted runner 'chief-host') and calls the Chief
+    # agent directly, so the day's briefing is generated and published even when the laptop
+    # was asleep at the scheduled start: jobs targeting an offline self-hosted runner QUEUE
+    # on GitHub and execute the moment the machine wakes. Safety: this repo is public, so
+    # NO pull_request/push trigger may ever target this runner - only the schedule and
+    # manual dispatch below, which always execute code from main (owner-pushable only).
+    runs-on: chief-host
+    timeout-minutes: 45
+    steps:
+      - name: Run the Chief daily cycle (agents, save, publish)
+        shell: pwsh
+        run: |
+          $script = 'C:\Users\SThirunarayanan\.config\opencode\scripts\chief-daily.ps1'
+          if (-not (Test-Path $script)) { Write-Error "chief-daily.ps1 not found at $script"; exit 1 }
+          & $script
+
   verify-and-publish:
+    needs: generate-briefing
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
